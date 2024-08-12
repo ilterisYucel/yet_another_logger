@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict, FilePath, field_serializer
+from pathlib import Path
 
-from .enums import LoggerTypes, LogLevels
+from pydantic import BaseModel, ConfigDict, field_serializer
+
+from yet_another_logger.enums import LoggerTypes, LogLevels
 
 __all__ = [
     "BaseConfiguration",
@@ -25,7 +27,7 @@ class StreamLoggerConfiguration(BaseConfiguration):
 
 
 class FileLoggerConfiguration(BaseConfiguration):
-    file_path: FilePath
+    file_path: Path
 
     @field_serializer("file_path")
     def serialize_dt(self, file_path) -> str:

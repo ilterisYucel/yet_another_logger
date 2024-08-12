@@ -7,10 +7,11 @@ from pathlib import Path
 from typing import Any
 
 import toml
-from enums import ErrorMessages, LoggerTypes
-from errors import BaseYALError
 from pydantic import ValidationError
-from schemas import (
+
+from yet_another_logger.enums import ErrorMessages, LoggerTypes
+from yet_another_logger.errors import BaseYALError
+from yet_another_logger.schemas import (
     BaseConfiguration,
     FileLoggerConfiguration,
     RotatingFileLoggerConfiguration,
@@ -30,8 +31,8 @@ __all__: list[str] = [
 
 class BaseLogger(ABC):
     def __init__(self, configuration: BaseConfiguration) -> None:
-        self.__configuration: BaseConfiguration = configuration
-        self.__logger: logging.Logger = None
+        self._configuration: BaseConfiguration = configuration
+        self._logger: logging.Logger = None
 
     @property
     def logger(self) -> logging.Logger:
@@ -39,19 +40,12 @@ class BaseLogger(ABC):
             raise BaseYALError(
                 message=ErrorMessages.NOT_CONFIGURATED,
                 class_name=self.__class__.__name__,
-                function_name=self.logger.__name__,
+                function_name=self.logger.__qualname__,
             )
-        return self.__logger
+        return self._logger
 
-    @abstractmethod
     @classmethod
-    def validate_configuration(
-        cls, configuration: BaseConfiguration | None = None
-    ) -> bool:
-        pass
-
     @abstractmethod
-    @classmethod
     def from_dict(cls, configuration_dict: dict) -> BaseLogger:
         pass
 
@@ -60,37 +54,37 @@ class BaseLogger(ABC):
         pass
 
     def configured(self) -> bool:
-        return self.__logger is not None
+        return self._logger is not None
 
     def log(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.log(level=self.__configuration.log_level, msg=message)
+        self._logger.log(level=self._configuration.log_level, msg=message)
 
     def debug(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.debug(msg=message)
+        self._logger.debug(msg=message)
 
     def info(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.info(msg=message)
+        self._logger.info(msg=message)
 
     def warning(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.warning(msg=message)
+        self._logger.warning(msg=message)
 
     def error(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.error(msg=message)
+        self._logger.error(msg=message)
 
     def critical(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        self.__logger.critical(msg=message)
+        self._logger.critical(msg=message)
 
 
 class StreamLogger(BaseLogger):
@@ -99,23 +93,23 @@ class StreamLogger(BaseLogger):
 
     def configure(self) -> None:
         try:
-            self.__logger = logging.getLogger(self.__configuration.name)
+            self.__logger = logging.getLogger(self._configuration.name)
             logger_format = logging.Formatter(
-                self.__configuration.format, datefmt=self.__configuration.date_format
+                self._configuration.format, datefmt=self._configuration.date_format
             )
             logger_handler = logging.StreamHandler()
-            logger_handler.setLevel(level=self.__configuration.log_level)
+            logger_handler.setLevel(level=self._configuration.log_level)
             logger_handler.setFormatter(fmt=logger_format)
             self.__logger.addHandler(hdlr=logger_handler)
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.CONFIGURATION_FAILED,
                 class_name=self.__class__.__name__,
-                function_name=self.logger.__name__,
+                function_name=self.configure.__name__,
             ) from exc
 
     @classmethod
-    def from_config(cls, configuration_dict: dict) -> StreamLogger:
+    def from_dict(cls, configuration_dict: dict) -> StreamLogger:
         try:
             configuration: StreamLoggerConfiguration = StreamLoggerConfiguration(
                 **configuration_dict
@@ -125,13 +119,13 @@ class StreamLogger(BaseLogger):
             raise BaseYALError(
                 message=ErrorMessages.INVALID_CONFIGURATION,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.INTERNAL_ERROR,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
 
 
@@ -141,25 +135,23 @@ class FileLogger(BaseLogger):
 
     def configure(self) -> None:
         try:
-            self.__logger = logging.getLogger(self.__configuration.name)
+            self.__logger: logging.Logger = logging.getLogger(self._configuration.name)
             logger_format = logging.Formatter(
-                self.__configuration.format, datefmt=self.__configuration.date_format
+                self._configuration.format, datefmt=self._configuration.date_format
             )
-            logger_handler = logging.FileHandler(
-                filename=self.__configuration.file_path
-            )
-            logger_handler.setLevel(level=self.__configuration.log_level)
+            logger_handler = logging.FileHandler(filename=self._configuration.file_path)
+            logger_handler.setLevel(level=self._configuration.log_level)
             logger_handler.setFormatter(fmt=logger_format)
             self.__logger.addHandler(hdlr=logger_handler)
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.CONFIGURATION_FAILED,
                 class_name=self.__class__.__name__,
-                function_name=self.logger.__name__,
+                function_name=self.configure.__name__,
             ) from exc
 
     @classmethod
-    def from_config(cls, configuration_dict: dict) -> StreamLogger:
+    def from_dict(cls, configuration_dict: dict) -> StreamLogger:
         try:
             configuration: FileLoggerConfiguration = FileLoggerConfiguration(
                 **configuration_dict
@@ -169,13 +161,13 @@ class FileLogger(BaseLogger):
             raise BaseYALError(
                 message=ErrorMessages.INVALID_CONFIGURATION,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.INTERNAL_ERROR,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
 
 
@@ -185,27 +177,29 @@ class RotatingFileLogger(BaseLogger):
 
     def configure(self) -> None:
         try:
-            self.__logger = logging.getLogger(self.__configuration.name)
+            self.__logger: logging.Logger = logging.getLogger(
+                name=self._configuration.name
+            )
             logger_format = logging.Formatter(
-                self.__configuration.format, datefmt=self.__configuration.date_format
+                self._configuration.format, datefmt=self._configuration.date_format
             )
             logger_handler = RotatingFileHandler(
-                filename=self.__configuration.file_path,
-                maxBytes=self.__configuration.max_bytes,
-                backupCount=self.__configuration.backup_count,
+                filename=self._configuration.file_path,
+                maxBytes=self._configuration.max_bytes,
+                backupCount=self._configuration.backup_count,
             )
-            logger_handler.setLevel(level=self.__configuration.log_level)
+            logger_handler.setLevel(level=self._configuration.log_level)
             logger_handler.setFormatter(fmt=logger_format)
             self.__logger.addHandler(hdlr=logger_handler)
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.CONFIGURATION_FAILED,
                 class_name=self.__class__.__name__,
-                function_name=self.logger.__name__,
+                function_name=self.configure.__name__,
             ) from exc
 
     @classmethod
-    def from_config(cls, configuration_dict: dict) -> StreamLogger:
+    def from_dict(cls, configuration_dict: dict) -> StreamLogger:
         try:
             configuration: FileLoggerConfiguration = FileLoggerConfiguration(
                 **configuration_dict
@@ -215,13 +209,13 @@ class RotatingFileLogger(BaseLogger):
             raise BaseYALError(
                 message=ErrorMessages.INVALID_CONFIGURATION,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.INTERNAL_ERROR,
                 class_name=cls.__name__,
-                function_name=cls.logger.__name__,
+                function_name=cls.from_dict.__name__,
             ) from exc
 
 
@@ -239,7 +233,7 @@ class LoggerFactory:
             raise BaseYALError(
                 message=ErrorMessages.FACTORY_NOT_CONFIGURED,
                 class_name=self.__class__.__name__,
-                function_name=self.loggers.__name__,
+                # function_name=self.loggers.__qualname__,
             )
         return self.__loggers
 
@@ -252,7 +246,7 @@ class LoggerFactory:
             content: dict[str, Any] = toml.load(config_file)
             configuration_list: list[BaseConfiguration] = []
             for v in content.values():
-                match v["type"].capitalize():
+                match v["type"].upper():
                     case LoggerTypes.STREAM:
                         configuration_list.append(StreamLoggerConfiguration(**v))
                     case LoggerTypes.FILE:
@@ -272,7 +266,7 @@ class LoggerFactory:
         try:
             configuration_list: list[BaseConfiguration] = []
             for d in dict_list:
-                match d["type"].capitalize():
+                match d["type"].upper():
                     case LoggerTypes.STREAM:
                         configuration_list.append(StreamLoggerConfiguration(**d))
                     case LoggerTypes.FILE:
@@ -298,7 +292,6 @@ class LoggerFactory:
                     case LoggerTypes.ROTATING_FILE:
                         self.__loggers.append(RotatingFileLogger(conf))
 
-            # map(self.__loggers, lambda logger: logger.configure())
         except BaseYALError as exc:
             raise exc
         except Exception as exc:
@@ -359,45 +352,48 @@ class YetAnotherLogger:
 
     def configure(self) -> None:
         try:
-            map(self.__loggers, lambda logger: logger.configure())
+            self.__loggers = list(
+                map(lambda logger: logger.configure(), self.__loggers)
+            )
         except BaseYALError as exc:
             raise exc
         except Exception as exc:
             raise BaseYALError(
                 message=ErrorMessages.INTERNAL_ERROR,
                 class_name=self.__class__.__name__,
-                function_name=self.from_schema.__name__,
+                function_name=self.configure.__name__,
             ) from exc
 
     def configured(self) -> None:
+        print(self.__loggers)
         return all([logger.configured() for logger in self.__loggers])
 
     def log(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.log(message))
+        map(lambda logger: logger.log(message), self.__loggers)
 
     def debug(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.debug(message))
+        map(lambda logger: logger.debug(message), self.__loggers)
 
     def info(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.info(message))
+        map(lambda logger: logger.info(message), self.__loggers)
 
     def warning(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.warning(message))
+        map(lambda logger: logger.warning(message), self.__loggers)
 
     def error(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.error(message))
+        map(lambda logger: logger.error(message), self.__loggers)
 
     def critical(self, message: str) -> None:
         if not self.configured():
             raise BaseYALError(message=ErrorMessages.NOT_CONFIGURATED)
-        map(self.__loggers, lambda logger: logger.cricital(message))
+        map(lambda logger: logger.cricital(message), self.__loggers)

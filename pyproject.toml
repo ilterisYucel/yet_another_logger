@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yet-another-logger"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["ilteris.yucel <ilteris.yucel@gmail.com>"]
 readme = "README.md"

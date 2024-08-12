@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 
 __all__: list[str] = [
     "LoggerTypes",
@@ -7,13 +7,13 @@ __all__: list[str] = [
 ]
 
 
-class LoggerTypes(Enum):
+class LoggerTypes(StrEnum):
     STREAM: str = "STREAM"
     FILE: str = "FILE"
     ROTATING_FILE: str = "ROTATING_FILE"
 
 
-class LogLevels(Enum):
+class LogLevels(StrEnum):
     DEBUG: str = "DEBUG"
     INFO: str = "INFO"
     WARNING: str = "WARNING"
@@ -21,7 +21,7 @@ class LogLevels(Enum):
     CRITICAL: str = "CRITICAL"
 
 
-class ErrorMessages(Enum):
+class ErrorMessages(StrEnum):
     NOT_CONFIGURATED: str = "Logger is not yet configurated."
     FACTORY_NOT_CONFIGURED: str = "Factor is not configured."
     INVALID_CONFIGURATION: str = "Configuration is invalid."
